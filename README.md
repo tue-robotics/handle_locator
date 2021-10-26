@@ -1,3 +1,3 @@
 # handle_locator
 
-[![Build Status](https://travis-ci.org/tue-robotics/handle_locator.svg?branch=master)](https://travis-ci.org/tue-robotics/handle_locator)
+[![CI](https://github.com/tue-robotics/handle_locator/workflows/CI/badge.svg)](https://github.com/tue-robotics/handle_locator/actions)
