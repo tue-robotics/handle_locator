@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package>
+  <name>handle_locator</name>
+  <version>0.0.0</version>
+  <description>The handle_locator package</description>
+
+  <maintainer email="j.geijsberts@tue.nl">Josja Geijsberts</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>actionlib</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>pcl_ros</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>tue_msgs</build_depend>
+
+  <run_depend>actionlib</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>pcl_ros</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>tue_msgs</run_depend>
+
+</package>
