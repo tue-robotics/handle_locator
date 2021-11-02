@@ -4,11 +4,11 @@ add_definitions(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
     actionlib
-    tf
+    geometry_msgs
     pcl_ros
     roscpp
-    geometry_msgs
     sensor_msgs
+    tf
     tue_msgs
 )
 
@@ -20,11 +20,11 @@ catkin_package(
     LIBRARIES handle_locator
     CATKIN_DEPENDS
         actionlib
-        tf
+        geometry_msgs
         pcl_ros
         roscpp
-        geometry_msgs
         sensor_msgs
+        tf
         tue_msgs
 )
 
