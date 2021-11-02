@@ -20,11 +20,6 @@ typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 actionlib::SimpleActionServer<tue_msgs::LocateDoorHandleAction>* as_;
 std::shared_ptr<tf::TransformListener> listener_;
 
-// only for debugging:
-ros::Publisher pcl_pub_;
-ros::Publisher pcl_point1_pub_;
-ros::Publisher pcl_point2_pub_;
-
 geometry_msgs::PointStamped handle_edge_point1;
 geometry_msgs::PointStamped handle_edge_point2;
 
@@ -170,11 +165,6 @@ void executeCB(const tue_msgs::LocateDoorHandleGoalConstPtr& goal) {
         j++;
     }
 
-
-    // only for debugging:
-    handle_cluster->header.frame_id = msg->header.frame_id;
-    pcl_pub_.publish(handle_cluster);
-
     // check that preempt has not been requested by the client
     if (as_->isPreemptRequested() || !ros::ok()) {
         // set the action state to preempted
@@ -191,13 +181,11 @@ void executeCB(const tue_msgs::LocateDoorHandleGoalConstPtr& goal) {
         handle_edge_point1.point.y = min_point(1);
         handle_edge_point1.point.z = min_point(2);
         result.handle_edge_point1 = handle_edge_point1;
-        pcl_point1_pub_.publish(handle_edge_point1);
         handle_edge_point2.header.frame_id = msg->header.frame_id;
         handle_edge_point2.point.x = max_point(0);
         handle_edge_point2.point.y = max_point(1);
         handle_edge_point2.point.z = max_point(2);
         result.handle_edge_point2 = handle_edge_point2;
-        pcl_point2_pub_.publish(handle_edge_point2);
         as_->setSucceeded(result);
     } else {
         as_->setAborted();
@@ -209,11 +197,6 @@ int main(int argc, char** argv) {
     ros::init(argc, argv, "locate_handle_server");
     ros::NodeHandle nh;
     listener_ = std::shared_ptr<tf::TransformListener>(new tf::TransformListener());
-
-    // only for debugging:
-    pcl_pub_ = nh.advertise<PointCloud> ("debug_pcl", 100);
-    pcl_point1_pub_ = nh.advertise<geometry_msgs::PointStamped> ("debug_point1_pcl", 100);
-    pcl_point2_pub_ = nh.advertise<geometry_msgs::PointStamped> ("debug_point2_pcl", 100);
 
     as_ = new actionlib::SimpleActionServer<tue_msgs::LocateDoorHandleAction>(nh, "locate_handle",
             &executeCB, false);
