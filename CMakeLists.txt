@@ -28,6 +28,6 @@ catkin_package(
         tue_msgs
 )
 
-add_executable(locate_handle_action src/handle_locator/locate_handle.cpp)
+add_executable(locate_handle_action src/locate_handle.cpp)
 
 target_link_libraries(locate_handle_action ${catkin_LIBRARIES})
