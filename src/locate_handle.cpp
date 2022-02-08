@@ -163,7 +163,8 @@ void executeCB(const tue_msgs::LocateDoorHandleGoalConstPtr& goal) {
     }
 
     // check that preempt has not been requested by the client
-    if (as_->isPreemptRequested() || !ros::ok()) {
+    if (as_->isPreemptRequested() || !ros::ok())
+    {
         // set the action state to preempted
         as_->setPreempted();
     }
