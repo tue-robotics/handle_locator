@@ -182,7 +182,8 @@ void executeCB(const tue_msgs::LocateDoorHandleGoalConstPtr& goal) {
         result.handle_edge_point2.point.y = max_point(1);
         result.handle_edge_point2.point.z = max_point(2);
         as_->setSucceeded(result);
-    } else
+    }
+    else
     {
         as_->setAborted();
     }
