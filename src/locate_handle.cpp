@@ -15,6 +15,9 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
 
+#define MAX_ERROR 1.0  // if the error is larger than 1m, it's unlikely we found the handle
+#define BOUNDING_BOX_SIZE 0.5
+
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 
 std::unique_ptr<actionlib::SimpleActionServer<tue_msgs::LocateDoorHandleAction>> as_;
@@ -57,15 +60,15 @@ void executeCB(const tue_msgs::LocateDoorHandleGoalConstPtr& goal) {
     } else
     {
         as_->setAborted();
-        ROS_ERROR("listener__ could not find transform");
+        ROS_ERROR("TF could not find transform");
         return;
     }
 
     // This crops the pointcloud to a bounding box of 25 cm around the original handle location
-    double min_x = original_handle_location.point.x - 0.25;
-    double min_z = original_handle_location.point.z - 0.25;
-    double max_x = original_handle_location.point.x + 0.25;
-    double max_z = original_handle_location.point.z + 0.25;
+    double min_x = original_handle_location.point.x - (BOUNDING_BOX_SIZE/2.0);
+    double min_z = original_handle_location.point.z - (BOUNDING_BOX_SIZE/2.0);
+    double max_x = original_handle_location.point.x + (BOUNDING_BOX_SIZE/2.0);
+    double max_z = original_handle_location.point.z + (BOUNDING_BOX_SIZE/2.0);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cropped(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PassThrough<pcl::PointXYZ> pass;
@@ -90,7 +93,7 @@ void executeCB(const tue_msgs::LocateDoorHandleGoalConstPtr& goal) {
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_f(new pcl::PointCloud<pcl::PointXYZ>);
 
-    int i=0, nr_points = (int) cloud_cropped->points.size();
+    uint nr_points = (int) cloud_cropped->points.size();
     while (cloud_cropped->points.size() > 0.8 * nr_points)
     {
         // Segment the largest planar component from the remaining cloud
@@ -130,14 +133,13 @@ void executeCB(const tue_msgs::LocateDoorHandleGoalConstPtr& goal) {
     ec.setInputCloud(cloud_cropped);
     ec.extract(cluster_indices);
 
-    double error = 1.0; // if the error is more than 1m, it is unlikely we found the handle
+    double min_error = MAX_ERROR; // initialized at MAX_ERROR but overwritten with found minimal error
     pcl::PointCloud<pcl::PointXYZ>::Ptr handle_cluster(new pcl::PointCloud<pcl::PointXYZ>);
-    int j = 0;
     for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin(); it != cluster_indices.end(); ++it)
     {
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
         for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit)
-            cloud_cluster->points.push_back(cloud_cropped->points[*pit]); //*
+            cloud_cluster->points.push_back(cloud_cropped->points[*pit]);
         cloud_cluster->width = cloud_cluster->points.size();
         cloud_cluster->height = 1;
         cloud_cluster->is_dense = true;
@@ -152,13 +154,12 @@ void executeCB(const tue_msgs::LocateDoorHandleGoalConstPtr& goal) {
         double measured_error = error_x + error_y + error_z;
         ROS_DEBUG_STREAM("Total error of the cluster: " << measured_error);
         // ToDo: could also filter based on number of points to improve selection (handle ~1000 points)
-        if (measured_error < error)
+        if (measured_error < min_error)
         {
             *handle_cluster = *cloud_cluster;
-            error = measured_error;
+            min_error = measured_error;
         }
         ROS_DEBUG_STREAM("PointCloud representing the Cluster: " << cloud_cluster->points.size() << " data points.");
-        j++;
     }
 
     // check that preempt has not been requested by the client
@@ -166,32 +167,29 @@ void executeCB(const tue_msgs::LocateDoorHandleGoalConstPtr& goal) {
         // set the action state to preempted
         as_->setPreempted();
     }
-    if (error < 1.0) {
-        // This section is called only when the cluster of the first while loop is empty (which should be never...)
+    if (min_error < MAX_ERROR) {  // if the minimal error is sufficiently low, the corresponding cluster is found to be the handle
         Eigen::Vector4f min_point;
         Eigen::Vector4f max_point;
         pcl::getMinMax3D(*handle_cluster, min_point, max_point);
         ROS_INFO_STREAM("Handle cluster min_point: " << min_point << ", max_point: " << max_point);
         tue_msgs::LocateDoorHandleResult result;
-        geometry_msgs::PointStamped handle_edge_point1;
-        handle_edge_point1.header.frame_id = msg->header.frame_id;
-        handle_edge_point1.point.x = min_point(0);
-        handle_edge_point1.point.y = min_point(1);
-        handle_edge_point1.point.z = min_point(2);
-        result.handle_edge_point1 = handle_edge_point1;
-        geometry_msgs::PointStamped handle_edge_point2;
-        handle_edge_point2.header.frame_id = msg->header.frame_id;
-        handle_edge_point2.point.x = max_point(0);
-        handle_edge_point2.point.y = max_point(1);
-        handle_edge_point2.point.z = max_point(2);
-        result.handle_edge_point2 = handle_edge_point2;
+        result.handle_edge_point1.header.frame_id = msg->header.frame_id;
+        result.handle_edge_point1.point.x = min_point(0);
+        result.handle_edge_point1.point.y = min_point(1);
+        result.handle_edge_point1.point.z = min_point(2);
+        result.handle_edge_point2.header.frame_id = msg->header.frame_id;
+        result.handle_edge_point2.point.x = max_point(0);
+        result.handle_edge_point2.point.y = max_point(1);
+        result.handle_edge_point2.point.z = max_point(2);
         as_->setSucceeded(result);
-    } else {
+    } else
+    {
         as_->setAborted();
     }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
 
     ros::init(argc, argv, "locate_handle_server");
     ros::NodeHandle nh;
