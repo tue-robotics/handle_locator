@@ -1,6 +1,5 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(handle_locator)
-add_definitions(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
     actionlib
@@ -13,21 +12,14 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 include_directories(
-        ${catkin_INCLUDE_DIRS}
+    ${catkin_INCLUDE_DIRS}
 )
 
 catkin_package(
     LIBRARIES handle_locator
-    CATKIN_DEPENDS
-        actionlib
-        geometry_msgs
-        pcl_ros
-        roscpp
-        sensor_msgs
-        tf
-        tue_msgs
+    CATKIN_DEPENDS actionlib geometry_msgs pcl_ros roscpp sensor_msgs tf tue_msgs
 )
 
-add_executable(locate_handle_action src/locate_handle.cpp)
+add_executable(handle_locator src/locate_handle.cpp)
 
-target_link_libraries(locate_handle_action ${catkin_LIBRARIES})
+target_link_libraries(handle_locator ${catkin_LIBRARIES})
